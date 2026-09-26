@@ -1,11 +1,13 @@
 import { useAudioRecorder, AudioModule, RecordingPresets, setAudioModeAsync } from "expo-audio";
+import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import { Camera, Microphone, PaperPlaneRight, Plus, Smiley, Trash, X } from "phosphor-react-native";
+import { Camera, FileText, ImageSquare, Microphone, PaperPlaneRight, Plus, Smiley, Trash, UserCircle, VideoCamera, X } from "phosphor-react-native";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-import { uploadFile } from "@/src/api";
+import { api, uploadFile } from "@/src/api";
+import { Avatar } from "@/src/components/ui";
 import { useToast } from "@/src/toast";
 import { makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -33,6 +35,9 @@ export function Composer({
   const [showEmoji, setShowEmoji] = useState(false);
   const [recording, setRecording] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [showAttach, setShowAttach] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
+  const [contacts, setContacts] = useState<any[]>([]);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const typingTimeout = useRef<any>(null);
   const secTimer = useRef<any>(null);
@@ -85,6 +90,60 @@ export function Composer({
     } catch {
       toast.show("Upload failed", "error");
     }
+  };
+
+  const pickVideo = async () => {
+    setShowAttach(false);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return toast.show("Photos permission needed", "error");
+      const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.6, mediaTypes: ["videos"] });
+      if (res.canceled || !res.assets?.[0]) return;
+      const asset = res.assets[0];
+      toast.show("Uploading video…", "info");
+      const up = await uploadFile(asset.uri, asset.fileName || `video_${Date.now()}.mp4`, asset.mimeType || "video/mp4");
+      onSend({ type: "video", text: "", attachment: { url: up.url, name: up.name, mime: up.mime, size: up.size, duration: asset.duration ? asset.duration / 1000 : undefined, width: asset.width, height: asset.height }, reply_to: reply?.id });
+      onClearReply();
+    } catch {
+      toast.show("Video upload failed", "error");
+    }
+  };
+
+  const pickDocument = async () => {
+    setShowAttach(false);
+    try {
+      const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+      if (res.canceled || !res.assets?.[0]) return;
+      const doc = res.assets[0];
+      toast.show("Uploading document…", "info");
+      const up = await uploadFile(doc.uri, doc.name, doc.mimeType || "application/octet-stream");
+      onSend({ type: "file", text: "", attachment: { url: up.url, name: up.name, mime: up.mime, size: up.size }, reply_to: reply?.id });
+      onClearReply();
+    } catch {
+      toast.show("Document upload failed", "error");
+    }
+  };
+
+  const openContacts = async () => {
+    setShowAttach(false);
+    try {
+      const list = await api.get("/contacts");
+      setContacts(list);
+      setShowContacts(true);
+    } catch {
+      toast.show("Could not load contacts", "error");
+    }
+  };
+
+  const sendContact = (u: any) => {
+    setShowContacts(false);
+    onSend({
+      type: "contact",
+      text: u.display_name,
+      attachment: { url: "", mime: "contact", name: u.username, contact_id: u.id, contact_username: u.username, contact_avatar: u.avatar_url || "" },
+      reply_to: reply?.id,
+    });
+    onClearReply();
   };
 
   const startRecording = async () => {
@@ -177,7 +236,7 @@ export function Composer({
           />
           {!text.trim() && (
             <>
-              <Pressable testID="attach-btn" onPress={() => pickImage(false)} style={styles.iconBtn}>
+              <Pressable testID="attach-btn" onPress={() => setShowAttach(true)} style={styles.iconBtn}>
                 <Plus size={26} color={colors.muted} />
               </Pressable>
               <Pressable testID="camera-btn" onPress={() => pickImage(true)} style={styles.iconBtn}>
@@ -196,7 +255,55 @@ export function Composer({
           )}
         </View>
       )}
+
+      <Modal visible={showAttach} transparent animationType="slide" onRequestClose={() => setShowAttach(false)}>
+        <Pressable style={styles.sheetOverlay} onPress={() => setShowAttach(false)} testID="attach-menu">
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.attachGrid}>
+              <AttachOption icon={<ImageSquare size={26} color={colors.onBrandPrimary} weight="fill" />} bg={colors.brandPrimary} label="Photo" onPress={() => { setShowAttach(false); pickImage(false); }} testID="attach-photo" />
+              <AttachOption icon={<VideoCamera size={26} color={colors.onBrandSecondary} weight="fill" />} bg={colors.gold} label="Video" onPress={pickVideo} testID="attach-video" />
+              <AttachOption icon={<FileText size={26} color={colors.onBrand} weight="fill" />} bg={colors.brand} label="Document" onPress={pickDocument} testID="attach-document" />
+              <AttachOption icon={<UserCircle size={26} color={colors.onSurface} weight="fill" />} bg={colors.surfaceTertiary} label="Contact" onPress={openContacts} testID="attach-contact" />
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={showContacts} transparent animationType="slide" onRequestClose={() => setShowContacts(false)}>
+        <Pressable style={styles.sheetOverlay} onPress={() => setShowContacts(false)} testID="contact-picker">
+          <View style={[styles.sheet, { maxHeight: "70%" }]}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Share a contact</Text>
+            <ScrollView>
+              {contacts.length === 0 ? (
+                <Text style={styles.sheetEmpty}>No contacts yet</Text>
+              ) : (
+                contacts.map((u) => (
+                  <Pressable key={u.id} testID={`share-contact-${u.id}`} onPress={() => sendContact(u)} style={styles.contactRow}>
+                    <Avatar name={u.display_name} uri={u.avatar_url} id={u.id} size={44} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.contactName}>{u.display_name}</Text>
+                      <Text style={styles.contactUser}>@{u.username}</Text>
+                    </View>
+                  </Pressable>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
+  );
+}
+
+function AttachOption({ icon, bg, label, onPress, testID }: any) {
+  const styles = useStyles();
+  return (
+    <Pressable testID={testID} onPress={onPress} style={styles.attachOption}>
+      <View style={[styles.attachIcon, { backgroundColor: bg }]}>{icon}</View>
+      <Text style={styles.attachLabel}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -215,4 +322,16 @@ const useStyles = makeStyles((c) => ({
   recIcon: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
   recDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.error },
   recTime: { flex: 1, fontSize: 15, fontWeight: "600", color: c.onSurface },
+  sheetOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: c.surface, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.lg, paddingBottom: spacing["2xl"] },
+  sheetHandle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: c.borderStrong, marginBottom: spacing.lg },
+  sheetTitle: { fontSize: 17, fontWeight: "800", color: c.onSurface, marginBottom: spacing.md },
+  sheetEmpty: { color: c.muted, textAlign: "center", padding: spacing.lg },
+  attachGrid: { flexDirection: "row", justifyContent: "space-around" },
+  attachOption: { alignItems: "center", gap: spacing.sm },
+  attachIcon: { width: 60, height: 60, borderRadius: 30, alignItems: "center", justifyContent: "center" },
+  attachLabel: { fontSize: 13, fontWeight: "600", color: c.onSurfaceSecondary },
+  contactRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.sm },
+  contactName: { fontSize: 15, fontWeight: "700", color: c.onSurface },
+  contactUser: { fontSize: 13, color: c.muted },
 }));

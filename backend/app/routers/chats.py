@@ -319,6 +319,9 @@ class Attachment(BaseModel):
     width: int | None = None
     height: int | None = None
     thumbnail_url: str | None = None
+    contact_id: str | None = None
+    contact_username: str | None = None
+    contact_avatar: str | None = None
 
 
 class MessageBody(BaseModel):

@@ -1,6 +1,8 @@
 import { useAudioPlayer, useAudioPlayerStatus } from "expo-audio";
-import { ArrowBendUpLeft, Checks, File as FileIcon, Pause, Play } from "phosphor-react-native";
-import React, { memo, useState } from "react";
+import { useVideoPlayer, VideoView } from "expo-video";
+import { useRouter } from "expo-router";
+import { ArrowBendUpLeft, Checks, File as FileIcon, Pause, Play, UserCircle } from "phosphor-react-native";
+import React, { memo, useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { api, mediaUrlToken } from "@/src/api";
@@ -40,6 +42,11 @@ function VoiceNote({ url, dur, mine }: { url: string; dur?: number; mine: boolea
   );
 }
 
+function VideoBubble({ url }: { url: string }) {
+  const player = useVideoPlayer(mediaUrlToken(url) || "", (p) => { p.loop = false; });
+  return <VideoView player={player} style={{ width: 240, height: 240, borderRadius: 8, marginBottom: 4 }} nativeControls contentFit="cover" testID="video-bubble" />;
+}
+
 function MessageBubbleBase({
   message,
   isMine,
@@ -51,6 +58,7 @@ function MessageBubbleBase({
   canTranslate,
   targetLang,
   sourceLang,
+  autoTranslate,
 }: {
   message: any;
   isMine: boolean;
@@ -62,11 +70,29 @@ function MessageBubbleBase({
   canTranslate: boolean;
   targetLang: string;
   sourceLang?: string;
+  autoTranslate?: boolean;
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const router = useRouter();
   const [translated, setTranslated] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
+
+  useEffect(() => {
+    if (!autoTranslate || isMine || !message.text || message.type !== "text") return;
+    if (sourceLang && sourceLang === targetLang) return;
+    let active = true;
+    (async () => {
+      try {
+        const r = await api.post("/vip/translate", { text: message.text, target_lang: targetLang, source_lang: sourceLang, message_id: message.id });
+        if (active) setTranslated(r.text);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoTranslate, isMine, message.id]);
 
   if (message.type === "system") {
     return (
@@ -120,6 +146,7 @@ function MessageBubbleBase({
         {att && (message.type === "image") && (
           <AuthedImage uri={att.url} style={styles.image} />
         )}
+        {att && message.type === "video" && <VideoBubble url={att.url} />}
         {att && message.type === "voice" && <VoiceNote url={att.url} dur={att.duration} mine={isMine} />}
         {att && message.type === "file" && (
           <View style={styles.fileRow}>
@@ -127,8 +154,25 @@ function MessageBubbleBase({
             <Text style={[styles.fileName, { color: txtColor }]} numberOfLines={1}>{att.name || "Document"}</Text>
           </View>
         )}
+        {att && message.type === "contact" && (
+          <Pressable
+            testID={`contact-card-${att.contact_id}`}
+            onPress={() => att.contact_id && router.push({ pathname: "/user/[id]", params: { id: att.contact_id } })}
+            style={styles.contactCard}
+          >
+            {att.contact_avatar ? (
+              <AuthedImage uri={att.contact_avatar} style={{ width: 44, height: 44, borderRadius: 22 }} />
+            ) : (
+              <UserCircle size={44} color={isMine ? colors.onBubbleOut : colors.brandPrimary} weight="fill" />
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.contactCardName, { color: txtColor }]} numberOfLines={1}>{message.text}</Text>
+              <Text style={[styles.contactCardUser, { color: isMine ? "rgba(255,255,255,0.8)" : colors.muted }]}>@{att.contact_username}</Text>
+            </View>
+          </Pressable>
+        )}
 
-        {!!message.text && <Text style={[styles.text, { color: txtColor }]}>{message.text}</Text>}
+        {!!message.text && message.type !== "contact" && <Text style={[styles.text, { color: txtColor }]}>{message.text}</Text>}
         {translated && (
           <View style={styles.translatedBox}>
             <Text style={styles.translatedLabel}>Translated</Text>
@@ -183,6 +227,9 @@ const useStyles = makeStyles((c) => ({
   fileRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 4, minWidth: 160 },
   fileIcon: { width: 38, height: 38, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" },
   fileName: { fontSize: 14, fontWeight: "600", flex: 1 },
+  contactCard: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 4, minWidth: 200 },
+  contactCardName: { fontSize: 15, fontWeight: "700" },
+  contactCardUser: { fontSize: 12 },
   systemWrap: { alignItems: "center", marginVertical: spacing.sm },
   systemText: { fontSize: 12, color: c.muted, backgroundColor: c.chatOverlay, paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.pill, overflow: "hidden" },
   reactions: { position: "absolute", bottom: -12, flexDirection: "row", alignItems: "center", backgroundColor: c.surface, borderRadius: radius.pill, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: c.border, gap: 2 },

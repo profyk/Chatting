@@ -58,7 +58,9 @@
           "photosPermission": "Share photos in your chats",
           "cameraPermission": "Take photos and video calls with friends"
         }
-      ]
+      ],
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc"
     ],
     "experiments": {
       "typedRoutes": true

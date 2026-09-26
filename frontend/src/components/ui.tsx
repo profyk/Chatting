@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
-import React from "react";
+import { Eye, EyeSlash } from "phosphor-react-native";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -162,18 +163,28 @@ export function TextField({
   label,
   error,
   style,
+  secureTextEntry,
   ...props
 }: TextInputProps & { label?: string; error?: string }) {
   const styles = useFieldStyles();
   const { colors } = useTheme();
+  const [hidden, setHidden] = useState(!!secureTextEntry);
   return (
     <View style={{ gap: spacing.xs }}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        placeholderTextColor={colors.muted}
-        style={[styles.input, error ? styles.inputError : null, style]}
-        {...props}
-      />
+      <View style={styles.inputWrap}>
+        <TextInput
+          placeholderTextColor={colors.muted}
+          secureTextEntry={secureTextEntry ? hidden : false}
+          style={[styles.input, secureTextEntry ? styles.inputWithIcon : null, error ? styles.inputError : null, style]}
+          {...props}
+        />
+        {secureTextEntry ? (
+          <Pressable testID="password-visibility-toggle" onPress={() => setHidden((h) => !h)} hitSlop={10} style={styles.eyeBtn}>
+            {hidden ? <Eye size={22} color={colors.muted} /> : <EyeSlash size={22} color={colors.muted} />}
+          </Pressable>
+        ) : null}
+      </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -181,6 +192,7 @@ export function TextField({
 
 const useFieldStyles = makeStyles((c) => ({
   label: { fontSize: 13, fontWeight: "600", color: c.onSurfaceSecondary, marginLeft: spacing.xs },
+  inputWrap: { justifyContent: "center" },
   input: {
     height: 52,
     borderRadius: radius.md,
@@ -191,7 +203,9 @@ const useFieldStyles = makeStyles((c) => ({
     borderWidth: 1,
     borderColor: "transparent",
   },
+  inputWithIcon: { paddingRight: 52 },
   inputError: { borderColor: c.error },
+  eyeBtn: { position: "absolute", right: spacing.md, height: 44, width: 32, alignItems: "center", justifyContent: "center" },
   error: { fontSize: 12, color: c.error, marginLeft: spacing.xs },
 }));
 

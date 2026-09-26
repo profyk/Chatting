@@ -239,6 +239,7 @@ export default function ChatScreen() {
         canTranslate={!!user?.is_vip}
         targetLang={user?.preferred_language || "en"}
         sourceLang={sender?.preferred_language}
+        autoTranslate={!!user?.is_vip && !!user?.privacy?.auto_translate}
       />
     );
   };

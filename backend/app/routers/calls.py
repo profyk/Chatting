@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from fastapi import APIRouter, HTTPException
@@ -7,6 +8,10 @@ from ..core import CurrentUser, db, now_iso, public_user
 from ..realtime import manager
 
 router = APIRouter(tags=["calls"])
+
+LIVEKIT_URL = os.environ.get("LIVEKIT_URL", "")
+LIVEKIT_API_KEY = os.environ.get("LIVEKIT_API_KEY", "")
+LIVEKIT_API_SECRET = os.environ.get("LIVEKIT_API_SECRET", "")
 
 
 class StartCall(BaseModel):
@@ -87,3 +92,27 @@ async def call_history(user: CurrentUser):
         c["peer"] = public_user(other) if other else None
         out.append(c)
     return out
+
+
+@router.get("/calls/{call_id}/token")
+async def livekit_token(call_id: str, user: CurrentUser):
+    """Mint a short-lived LiveKit room-join token for a participant of this call.
+    Returns configured=false when LiveKit keys are not yet set (dev/preview)."""
+    call = await db.calls.find_one({"id": call_id})
+    if not call:
+        raise HTTPException(404, "Call not found")
+    participants = {call["caller_id"], *call.get("callee_ids", [])}
+    if user["id"] not in participants:
+        raise HTTPException(403, "Not part of this call")
+    if not (LIVEKIT_URL and LIVEKIT_API_KEY and LIVEKIT_API_SECRET):
+        return {"configured": False, "url": None, "token": None, "room": call_id}
+    from livekit import api as lk
+
+    token = (
+        lk.AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET)
+        .with_identity(user["id"])
+        .with_name(user.get("display_name") or "Ditsala user")
+        .with_grants(lk.VideoGrants(room_join=True, room=call_id, can_publish=True, can_subscribe=True, can_publish_data=True))
+        .to_jwt()
+    )
+    return {"configured": True, "url": LIVEKIT_URL, "token": token, "room": call_id}
