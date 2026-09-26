@@ -1,0 +1,187 @@
+{
+  "app_name": "Ditsala",
+  "personality": "1 iOS-Native Clean fused with 6 Glass / Luxe surfaces",
+  "personality_one_liner": "A premium, warm, and highly functional messaging experience that balances lightning-fast utility with elevated, cinematic details.",
+  "color": {
+    "surface": "#FFFFFF",
+    "onSurface": "#050B20",
+    "surfaceSecondary": "#F4F6F9",
+    "onSurfaceSecondary": "#1A2542",
+    "surfaceTertiary": "#E9EDF5",
+    "onSurfaceTertiary": "#2E3B5C",
+    "surfaceInverse": "#0B1E5B",
+    "onSurfaceInverse": "#FFFFFF",
+    "brand": "#0B1E5B",
+    "onBrand": "#FFFFFF",
+    "brandPrimary": "#5FB325",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#F5A623",
+    "onBrandSecondary": "#4A3200",
+    "brandTertiary": "#EAF5E4",
+    "onBrandTertiary": "#1E4208",
+    "success": "#5FB325",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F5A623",
+    "onWarning": "#4A3200",
+    "error": "#E63946",
+    "onError": "#FFFFFF",
+    "info": "#0B1E5B",
+    "onInfo": "#FFFFFF",
+    "border": "#E2E8F0",
+    "borderStrong": "#CBD5E1",
+    "divider": "#F1F5F9",
+    "muted": "#64748B"
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous vertical rhythm for lists to avoid cramping. Touch targets must be at least 44x44. Safe areas handled precisely.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "pill": 999
+  },
+  "shadow_tier": "1",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Apply frosted glass to the bottom tab bar and sticky chat header when content scrolls underneath.",
+      "Use heavy blur (e.g., expo-blur with intensity 50+) backed by a 70% opacity tint of the background color (surface/surfaceInverse) for readability.",
+      "Use glass overlays for in-call control floating actions."
+    ],
+    "dont's": [
+      "Do not apply glass to individual chat bubbles or standard list rows.",
+      "Avoid glass behind text inputs or dense settings forms."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "haptics": {
+    "events": {
+      "send_message": "impactMedium",
+      "receive_message": "impactLight",
+      "toggle_switch": "selection",
+      "long_press_menu": "impactHeavy",
+      "record_voice_start": "impactLight",
+      "record_voice_stop": "impactMedium",
+      "tab_press": "selection"
+    }
+  },
+  "screens": [
+    {
+      "name": "Auth Flow (Welcome, Sign Up, Login)",
+      "purpose": "Introduce the Ditsala premium brand identity and onboard users seamlessly.",
+      "states": {
+        "loading": "Spinner overlaid on primary button.",
+        "empty": "N/A",
+        "error": "Inline red text below input fields or a toast for network issues."
+      },
+      "layout": "Welcome screen uses the 'friends_laughing' hero image with a heavy gradient-to-dark scrim (top to bottom) ensuring the logo and 'Your Trusted Circle' tagline pop in white. Action buttons sticky at bottom. Form screens are clean, single-column, with labels above inputs and a sticky CTA."
+    },
+    {
+      "name": "Chats List (Home)",
+      "purpose": "Scannable, dense list of recent conversations prioritizing unread messages.",
+      "states": {
+        "loading": "Skeleton rows mimicking avatars and text lengths.",
+        "empty": "Illustration of friendly connection, text 'No messages yet', and a primary CTA 'Start Chat' in brandPrimary green.",
+        "error": "Centered error message with 'Retry' button."
+      },
+      "layout": "Sticky glass header with a search bar. Native list (FlatList) for conversation rows. Row: 48pt avatar left, name and relative timestamp on top line, truncated message preview and green unread badge on bottom line. A floating action button (FAB) in brandPrimary green pinned bottom-right for 'New Message'."
+    },
+    {
+      "name": "Real-time Chat Screen",
+      "purpose": "Immersive, real-time messaging interface with multimedia support.",
+      "states": {
+        "loading": "Skeleton bubbles at bottom.",
+        "empty": "Date separator 'Today', otherwise empty background waiting for first message.",
+        "error": "Error icon next to failed message bubble; tap to retry."
+      },
+      "layout": "Glass header showing contact name, online status, and call icons. Background uses 'chat_bg' (warm texture) with full edge-to-edge coverage. Chat bubbles: Outgoing (brandPrimary at 15% opacity for light mode, solid green for dark mode, or solid brandPrimary for both with white text), Incoming (surfaceSecondary). Voice notes show a waveform and playback controls. Pinned messages appear as a small banner below the header. The composer is sticky at the bottom with a frosted glass background, containing text input, emoji, attachment, and a dominant mic/send button."
+    },
+    {
+      "name": "Calls List & Active Call",
+      "purpose": "View call history and manage active voice/video sessions.",
+      "states": {
+        "loading": "List skeletons.",
+        "empty": "Message 'No recent calls' with CTA 'Start a Call'.",
+        "error": "Standard retry state."
+      },
+      "layout": "List view similar to chats, using angled arrows (green for incoming, grey for outgoing, red for missed). Active Call screen is a full-bleed dark overlay (surfaceInverse) with a large avatar/video feed, and a floating glass pill at the bottom containing mute, speaker, video, and end call (red) buttons."
+    },
+    {
+      "name": "Contacts & Profile",
+      "purpose": "Manage connections and personal settings.",
+      "states": {
+        "loading": "Skeleton rows.",
+        "empty": "Text 'No contacts found'.",
+        "error": "Standard retry state."
+      },
+      "layout": "Contacts: A clean list with alphabetical section headers. Profile: Large cover banner (using surfaceInverse gradient), prominent 100pt avatar, display name, and elevated settings rows (tinted icon containers on the left, label, right chevron)."
+    },
+    {
+      "name": "VIP Premium Translation",
+      "purpose": "Upsell the core cross-language translation feature.",
+      "states": {
+        "loading": "Spinner on subscribe button.",
+        "empty": "N/A",
+        "error": "Toast for failed subscription."
+      },
+      "layout": "Cinematic upsell screen. Background is the 'vip_hero' gold abstract image with a heavy dark scrim. A glowing 3D crown or badge icon. Large typography emphasizing 'Ditsala VIP: Speak Every Language'. A sticky, full-width gold (brandSecondary) button 'Upgrade Now' at the bottom."
+    }
+  ],
+  "images": {
+    "hero_welcome": {
+      "url": "https://images.unsplash.com/photo-1589483232748-515c025575bc?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTZ8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBkaXZlcnNlJTIwQWZyaWNhbiUyMGZyaWVuZHMlMjBsYXVnaGluZyUyMHBvcnRyYWl0JTIwcHJlbWl1bSUyMHBob3RvZ3JhcGh5fGVufDB8fHx8MTc5MDQzNDg1NHww&ixlib=rb-4.1.0&q=85",
+      "alt": "Modern diverse African friends laughing portrait"
+    },
+    "chat_bg": {
+      "url": "https://images.unsplash.com/photo-1656055450481-e47bc720e687?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxzdWJ0bGUlMjBhYnN0cmFjdCUyMHdhcm0lMjB0ZXh0dXJlJTIwYmFja2dyb3VuZCUyMHNhbmQlMjBnb2xkfGVufDB8fHx8MTc5MDQzNDg1NHww&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1761437856376-2ce1c483343b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzV8MHwxfHNlYXJjaHwxfHxwcmVtaXVtJTIwbHV4dXJ5JTIwZ29sZCUyMGFic3RyYWN0JTIwYmFja2dyb3VuZCUyMGRhcmt8ZW58MHx8fHwxNzkwNDM0ODU1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Subtle abstract warm texture for chat background"
+    },
+    "vip_hero": {
+      "url": "https://images.unsplash.com/photo-1761437856376-2ce1c483343b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzV8MHwxfHNlYXJjaHwxfHxwcmVtaXVtJTIwbHV4dXJ5JTIwZ29sZCUyMGFic3RyYWN0JTIwYmFja2dyb3VuZCUyMGRhcmt8ZW58MHx8fHwxNzkwNDM0ODU1fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Premium luxury gold abstract background"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the user's requested palette: Deep Navy (#0B1E5B) for brand base and headers, Fresh Green (#5FB325) for primary actions/unread badges, and Warm Gold (#F5A623) for VIP features.",
+    "DARK MODE MAPPING: In dark mode, 'surface' becomes very dark navy (e.g., #050B20), 'surfaceSecondary' becomes #0B1E5B (base brand color). Text flips to white. Maintain Green and Gold accents as they are highly visible on dark backgrounds.",
+    "CHAT BUBBLES: Outgoing bubbles should be 'brandPrimary' (#5FB325) with white text, or a light tint of it (#EAF5E4) with dark text in light mode. Incoming bubbles should be 'surfaceSecondary'. Use a subtle border radius of 'md' on bubbles, with one sharp corner indicating direction (e.g., bottom-right sharp for outgoing).",
+    "VOICE NOTES: Research indicates premium voice note bubbles need an audio waveform (even a static SVG representation), duration, and a play icon. Ensure they split gracefully if multiple are sent.",
+    "SCRIM PATTERN: The Welcome screen hero image and VIP screen hero image MUST have a top-to-bottom gradient scrim (transparent to 80% surfaceInverse) to ensure text legibility.",
+    "GLASS SURFACES: Use glassmorphism on the bottom tabs, the chat screen header, and the chat composer bar. This keeps the warm chat background visible while maintaining UI structure.",
+    "EMPTY STATES: Ensure all list screens (Chats, Calls, Contacts) have full-screen flex:1 empty states with an illustration or large icon, descriptive text, and a primary action button.",
+    "INTERACTIONS: Wire haptics directly into the chat Send button, tab presses, and long-press message context menus to ensure tactile feedback."
+  ]
+}

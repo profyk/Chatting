@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Ditsala",
+    "slug": "frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "ditsala",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.emergent.ditsalapreview.k0w5ff",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take photos and video calls with friends",
+        "NSMicrophoneUsageDescription": "Send voice notes and make calls",
+        "NSPhotoLibraryUsageDescription": "Share photos in your chats"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0B1E5B"
+      },
+      "package": "com.emergent.ditsalapreview.k0w5ff",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-image.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#050B20"
+        }
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-status-bar",
+      "expo-audio",
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Share photos in your chats",
+          "cameraPermission": "Take photos and video calls with friends"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "summary": "Ditsala v1 comprehensive test — 32/32 backend pytest cases passed (auth, profile+search, contacts/block/report, direct+group conversations, messages CRUD + edit/delete/react/pin/mark-read/mute, cross-user 404 access control, VIP gating + real Claude Sonnet 5 EN->zu translate, calls flow, media upload with owner+member+outsider access matrix, WebSocket message:new delivery, bad-token WS close). Frontend Expo web preview loads clean at 390x844 mobile viewport with no red screen. Full flow verified: welcome -> signup -> Chats tab -> new-chat-fab -> search Thabo -> start-chat -> send text message -> message rendered with read receipt -> long-press opens action menu with react row + Reply/Copy/Pin/Edit/Delete -> back -> bottom tabs (Chats/Calls/Contacts/Settings) all navigate. No deprecated Expo packages (no expo-av / expo-barcode-scanner / expo-background-fetch). Only minor react-native-web shim console warnings noted.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "console", "issues": [
+        "react-native-web deprecation warning: 'props.pointerEvents is deprecated. Use style.pointerEvents' (upstream shim; low priority)",
+        "react-native-web deprecation warning: 'shadow* style props are deprecated. Use boxShadow' (upstream shim; low priority)"
+      ]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional polish: audit callsites for pointerEvents/shadow* -> style.pointerEvents/boxShadow to silence RNW console warnings.",
+    "Optional: seed users idempotently on startup so testers/tools always find thabo/lerato without re-registering."
+  ],
+  "critical_code_review_comments": [
+    "server.py uses deprecated @app.on_event startup/shutdown (FastAPI recommends lifespan). Works today, but consider migrating.",
+    "Rate limiter is in-memory per-process (core.rate_limit) — fine for single-worker preview; switch to Redis for prod scale (already TODO-noted in code).",
+    "chats._authed_media_user resolves attachment ownership via message.attachment.url match — this works because upload returns url=/api/files/{path}; keep this invariant if URL format changes.",
+    "public_user hides is_online when privacy.online_status=false; ensure the same rule is applied in websocket presence events (currently OK since manager.is_online is only used server-side)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (new)",
+    "/app/backend/tests/__init__.py (new)"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "100% of scoped flows"},
+  "seed_data_creation": "Test file registers fresh alice/bob/carol users per run (RUN suffix) to avoid collisions; VIP subscribe/cancel toggled inline. Existing thabo@ditsala.app and lerato@ditsala.app seeds present and usable.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend URL from EXPO_PUBLIC_BACKEND_URL. Pytest suite at /app/backend/tests/backend_test.py covers all endpoints incl. WS. All testIDs referenced in the review request exist and work: welcome-signup-btn, signup-*-input, signup-submit-btn, new-chat-fab, new-chat-search, start-chat-<id>, composer-input, send-btn, message-<id>, action-menu-overlay, action-reply/copy/pin/edit/delete, chat-back-btn, vip-subscribe-btn. Long-press is triggered via mouse down+hold ~900ms on web preview.",
+  "rca_of_issue": "No bugs to RCA — all backend endpoints and scoped frontend flows pass on this iteration."
+}
